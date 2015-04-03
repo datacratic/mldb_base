@@ -1,4 +1,5 @@
 #!/bin/bash
+# Copyright (c) 2015 Datacratic Inc.  All rights reserved.
 set -e
 set -x
 
