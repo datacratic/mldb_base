@@ -69,7 +69,8 @@ echo "deb http://mirror.pnl.gov/ubuntu/ precise-backports universe main multiver
 apt-get update
 apt-get upgrade -y
 apt-get install -y python-software-properties software-properties-common
-add-apt-repository ppa:nginx/stable
+add-apt-repository -y ppa:nginx/stable
+add-apt-repository -y ppa:ubuntu-toolchain-r/test
 apt-get update
 
 apt-get install -y \
@@ -93,7 +94,8 @@ apt-get install -y \
     libcppunit-1.12-1 \
     libidn11 \
     librtmp0 \
-    python-tk
+    python-tk \
+    libstdc++6
 
 # Platform deps
 cp -a -v -d  $PLATFORM_DEPS_DOCKER_DIR/lib /usr/local
