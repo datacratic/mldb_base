@@ -95,6 +95,8 @@ apt-get install -y \
     libidn11 \
     librtmp0 \
     python-tk \
+    unzip \
+    unrar-free \
     libstdc++6
 
 # Platform deps
@@ -110,7 +112,7 @@ ls /usr/local
 
 # Python dependencies
 apt-get install -y python-pip
-pip install -U pip==6.0.8 setuptools
+pip install -U pip setuptools
 pip2 install -U $PIP_WHEELHOUSE -r $BUILD_DOCKER_DIR/python_requirements.txt
 
 # Final cleanup
