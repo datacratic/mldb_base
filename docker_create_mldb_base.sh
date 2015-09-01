@@ -6,10 +6,9 @@ set -x
 progname=$(basename $0)
 
 CIDFILE=$(mktemp -u -t $progname.cid.XXXXXX)  # Race me!
-BASE_IMG="quay.io/datacratic/baseimage:0.9.9"
-IMG_NAME="quay.io/datacratic/mldb_base"
+BASE_IMG="quay.io/datacratic/baseimage:0.9.17"
+IMG_NAME="quay.io/datacratic/mldb_base:14.04"
 
-PLATFORM_DEPS_DOCKER_DIR="/mnt/local"
 BUILD_DOCKER_DIR="/mnt/build"
 
 function on_exit {
@@ -21,11 +20,10 @@ trap on_exit EXIT
 
 function usage {
 cat <<EOF >&2
-$progname [-b base_image] [-i image_name] -p platform-deps_source_dir [-w pip_wheelhouse_url]
+$progname [-b base_image] [-i image_name] [-w pip_wheelhouse_url]
 
     -b base_image               Base image to use ($BASE_IMG)
     -i image_name               Name of the resulting image ($IMG_NAME)
-    -p platform-deps_source_dir Directory holding the platform-deps binaries
     -w pip_wheelhouse_url       URL to use a a pip wheelhouse
 
 EOF
@@ -39,9 +37,6 @@ while getopts "b:p:i:w:" opt; do
     i)
       IMG_NAME="$OPTARG"
       ;;
-    p)
-      PLATFORM_DEPS_BIN_DIR="$OPTARG"
-      ;;
     w)
       PIP_WHEELHOUSE="-f $OPTARG"
       ;;
@@ -52,25 +47,18 @@ while getopts "b:p:i:w:" opt; do
   esac
 done
 
-if [ -z "$PLATFORM_DEPS_BIN_DIR" ]; then
-    echo 'Missing required option: -p' >&2
-    usage
-    exit 1
-fi
-
-
-docker run -i --cidfile "$CIDFILE" -v $PLATFORM_DEPS_BIN_DIR:$PLATFORM_DEPS_DOCKER_DIR:ro -v $PWD:$BUILD_DOCKER_DIR:ro "$BASE_IMG" bash -c 'cat > /tmp/command-to-run && chmod +x /tmp/command-to-run && exec /tmp/command-to-run' <<EOF
+docker run -i --cidfile "$CIDFILE" -v $PWD:$BUILD_DOCKER_DIR:ro "$BASE_IMG" bash -c 'cat > /tmp/command-to-run && chmod +x /tmp/command-to-run && exec /tmp/command-to-run' <<EOF
 set -e
 set -x
-echo "deb http://archive.ubuntu.com/ubuntu precise main universe" >/etc/apt/sources.list
-echo "deb http://security.ubuntu.com/ubuntu/ precise-security universe main multiverse restricted" >> /etc/apt/sources.list
-echo "deb http://mirror.pnl.gov/ubuntu/ precise-updates universe main multiverse restricted" >> /etc/apt/sources.list
-echo "deb http://mirror.pnl.gov/ubuntu/ precise-backports universe main multiverse restricted" >> /etc/apt/sources.list
+echo "deb http://archive.ubuntu.com/ubuntu trusty main universe" >/etc/apt/sources.list
+echo "deb http://security.ubuntu.com/ubuntu/ trusty-security universe main multiverse restricted" >> /etc/apt/sources.list
+echo "deb http://mirror.pnl.gov/ubuntu/ trusty-updates universe main multiverse restricted" >> /etc/apt/sources.list
+echo "deb http://mirror.pnl.gov/ubuntu/ trusty-backports universe main multiverse restricted" >> /etc/apt/sources.list
 apt-get update
 apt-get upgrade -y
 apt-get install -y python-software-properties software-properties-common
 add-apt-repository -y ppa:nginx/stable
-add-apt-repository -y ppa:ubuntu-toolchain-r/test
+#add-apt-repository -y ppa:ubuntu-toolchain-r/test
 apt-get update
 
 apt-get install -y \
@@ -82,37 +70,41 @@ apt-get install -y \
     python-dev \
     nginx \
     vim-tiny \
-    libgsasl7 \
-    libbz2-1.0 \
+    libboost-all-dev \
+    libgoogle-perftools4 \
     liblzma5 \
+    libbz2-1.0 \
     libcrypto++9 \
-    libicu48 \
-    libace-6.0.1 \
+    libv8-3.14.5 \
+    libcurlpp0 \
+    libcurl3 \
+    libssh2-1 \
+    liburcu1 \
+    libpython2.7 \
+    libgit2-0 \
+    libicu52 \
     liblapack3gf \
     libblas3gf \
     libevent-1.4-2 \
-    libcppunit-1.12-1 \
     libidn11 \
-    librtmp0 \
     python-tk \
     unzip \
     unrar-free \
     libstdc++6
 
-# Platform deps
-cp -a -v -d  $PLATFORM_DEPS_DOCKER_DIR/lib /usr/local
-# strip all libs
-strip /usr/local/lib/*.so*
-# drop static libs
-find /usr/local/lib -type f -name "*.a" -delete
-rm -rf /usr/local/lib/{node,node_modules}
-ldconfig
-echo "/usr/local contents:"
-ls /usr/local
+# no need, but do we want to strip base?
+## strip all libs
+#strip /usr/local/lib/*.so*
+## drop static libs
+#find /usr/local/lib -type f -name "*.a" -delete
+#rm -rf /usr/local/lib/{node,node_modules}
+#ldconfig
+#echo "/usr/local contents:"
+#ls /usr/local
 
 # Python dependencies
 apt-get install -y python-pip
-pip install -U pip setuptools
+pip install -U pip setuptools || true  # https://github.com/pypa/pip/issues/3045
 pip2 install -U $PIP_WHEELHOUSE -r $BUILD_DOCKER_DIR/python_requirements.txt
 
 # Final cleanup
