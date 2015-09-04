@@ -92,15 +92,8 @@ apt-get install -y \
     unrar-free \
     libstdc++6
 
-# no need, but do we want to strip base?
-## strip all libs
-#strip /usr/local/lib/*.so*
-## drop static libs
-#find /usr/local/lib -type f -name "*.a" -delete
-#rm -rf /usr/local/lib/{node,node_modules}
-#ldconfig
-#echo "/usr/local contents:"
-#ls /usr/local
+# Drop all static libs from /usr. not required and big
+find /usr/lib -type f -name '*.a' -print -delete
 
 # Python dependencies
 apt-get install -y python-pip
@@ -108,9 +101,12 @@ pip install -U pip setuptools || true  # https://github.com/pypa/pip/issues/3045
 pip2 install -U $PIP_WHEELHOUSE -r $BUILD_DOCKER_DIR/python_requirements.txt
 
 # Final cleanup
-apt-get purge -y vim locales iso-codes python-software-properties software-properties-common cpp gcc gcc-4.6
+apt-get purge -y vim 'language-pack-*' iso-codes python-software-properties software-properties-common rsync cpp gcc gcc-4.8 cpp-4.8
 apt-get autoremove -y --purge
 apt-get clean -y
+
+# Make sure en_US.UTF-8 is available
+locale-gen en_US.UTF-8
 
 # Python stuff cleanup
 # rm .pycs and rebuild them on boot
@@ -121,6 +117,7 @@ cat >/etc/my_init.d/10-rebuild_pycs.sh <<BIF
 
 /usr/local/bin/rebuild_pycs.py &
 BIF
+
 chmod +x /etc/my_init.d/10-rebuild_pycs.sh
 # Remove extra data...
 rm -rf /usr/local/lib/python2.7/dist-packages/bokeh/server/tests/data
