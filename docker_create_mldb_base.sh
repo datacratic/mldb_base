@@ -58,7 +58,6 @@ apt-get update
 apt-get upgrade -y
 apt-get install -y python-software-properties software-properties-common
 add-apt-repository -y ppa:nginx/stable
-#add-apt-repository -y ppa:ubuntu-toolchain-r/test
 apt-get update
 
 apt-get install -y \
