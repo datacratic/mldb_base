@@ -1,53 +1,5 @@
-#!/bin/bash
-# Copyright (c) 2015 Datacratic Inc.  All rights reserved.
-set -e
-set -x
+#!/bin/sh
 
-progname=$(basename $0)
-
-CIDFILE=$(mktemp -u -t $progname.cid.XXXXXX)  # Race me!
-BASE_IMG="quay.io/datacratic/baseimage:0.9.17"
-IMG_NAME="quay.io/datacratic/mldb_base:14.04"
-
-BUILD_DOCKER_DIR="/mnt/build"
-
-function on_exit {
-  if [ -n "$CIDFILE" ]; then
-      rm -f "$CIDFILE" || true
-  fi
-}
-trap on_exit EXIT
-
-function usage {
-cat <<EOF >&2
-$progname [-b base_image] [-i image_name] [-w pip_wheelhouse_url]
-
-    -b base_image               Base image to use ($BASE_IMG)
-    -i image_name               Name of the resulting image ($IMG_NAME)
-    -w pip_wheelhouse_url       URL to use a a pip wheelhouse
-
-EOF
-}
-
-while getopts "b:p:i:w:" opt; do
-  case $opt in
-    b)
-      BASE_IMG="$OPTARG"
-      ;;
-    i)
-      IMG_NAME="$OPTARG"
-      ;;
-    w)
-      PIP_WHEELHOUSE="-f $OPTARG"
-      ;;
-    *)
-      usage
-      exit
-      ;;
-  esac
-done
-
-docker run -i --cidfile "$CIDFILE" -v $PWD:$BUILD_DOCKER_DIR:ro "$BASE_IMG" bash -c 'cat > /tmp/command-to-run && chmod +x /tmp/command-to-run && exec /tmp/command-to-run' <<EOF
 set -e
 set -x
 echo "deb http://archive.ubuntu.com/ubuntu trusty main universe" >/etc/apt/sources.list
@@ -89,15 +41,17 @@ apt-get install -y \
     libblas3gf \
     libevent-1.4-2 \
     libidn11 \
-    python-tk \
     unzip \
     unrar-free \
-    libstdc++6
+    libstdc++6 \
+    python-tk \
 
-# Python dependencies
-apt-get install -y python-pip
-pip install -U pip setuptools || true  # https://github.com/pypa/pip/issues/3045
-pip2 install -U $PIP_WHEELHOUSE -r $BUILD_DOCKER_DIR/python_requirements.txt
+
+# Drop all static libs from /usr. not required and big
+# find /usr/lib -type f -name '*.a' -print -delete
+
+# Drop the statically linked Python images
+rm -f /usr/lib/python2.7/config-x86_64-linux-gnu/*.a
 
 # Final cleanup
 apt-get purge -y vim 'language-pack-*' iso-codes python-software-properties software-properties-common rsync cpp gcc gcc-4.8 cpp-4.8
@@ -110,7 +64,7 @@ locale-gen en_US.UTF-8
 # Python stuff cleanup
 # rm .pycs and rebuild them on boot
 find /usr/local/lib/python2.7/dist-packages -name '*.pyc' -delete
-install -m 555 $BUILD_DOCKER_DIR/mldb_base/rebuild_pycs.py  /usr/local/bin/
+install -m 555 /source/rebuild_pycs.py  /usr/local/bin/
 cat >/etc/my_init.d/10-rebuild_pycs.sh <<BIF
 #!/bin/bash
 
@@ -118,11 +72,6 @@ cat >/etc/my_init.d/10-rebuild_pycs.sh <<BIF
 BIF
 
 chmod +x /etc/my_init.d/10-rebuild_pycs.sh
-# Remove extra data...
-rm -rf /usr/local/lib/python2.7/dist-packages/bokeh/server/tests/data
-rm -rf /usr/local/lib/python2.7/dist-packages/matplotlib/tests/baseline_images
-# Strip libs
-find /usr/local/lib/python2.7 -type f -name "*so" -exec strip {} \;
 
 rm -rf /root/.cache /var/lib/apt/lists/* /tmp/* /var/tmp/* 2>/dev/null || true
 rm -rf /usr/share/man*  2>/dev/null || true
@@ -131,9 +80,3 @@ find /usr/share/doc -type f ! -name copyright -delete 2>/dev/null || true
 find /usr/share/doc -type d -empty -delete
 # that's magnificent...
 find /var/log -type f -name '*.log' -exec bash -c '</dev/null >{}' \;
-EOF
-
-CID=$(cat "$CIDFILE")
-echo $CID
-docker commit $CID "$IMG_NAME"
-docker rm $CID
