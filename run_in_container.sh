@@ -25,6 +25,7 @@ apt-get install -y \
     libboost-date-time1.54.0 \
     libboost-iostreams1.54.0 \
     libboost-python1.54.0 \
+    libboost-filesystem1.54.0 \
     libgoogle-perftools4 \
     liblzma5 \
     libbz2-1.0 \
