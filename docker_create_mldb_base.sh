@@ -60,6 +60,9 @@ apt-get install -y python-software-properties software-properties-common
 add-apt-repository -y ppa:nginx/stable
 apt-get update
 
+#####################
+# MLDB dependencies #
+#####################
 apt-get install -y \
     bash \
     nginx \
@@ -94,15 +97,16 @@ apt-get install -y \
     unrar-free \
     libstdc++6
 
-# Python dependencies
+#######################
+# Python dependencies #
+#######################
+
 apt-get install -y python-pip
 pip install -U pip setuptools || true  # https://github.com/pypa/pip/issues/3045
 pip2 install -U $PIP_WHEELHOUSE -r $BUILD_DOCKER_DIR/python_requirements.txt
 
-# Final cleanup
-apt-get purge -y vim 'language-pack-*' iso-codes python-software-properties software-properties-common rsync cpp gcc gcc-4.8 cpp-4.8
-apt-get autoremove -y --purge
-apt-get clean -y
+# Drop all static libs from /usr. not required and big
+find /usr/lib -type f -name '*.a' -print -delete
 
 # Make sure en_US.UTF-8 is available
 locale-gen en_US.UTF-8
@@ -116,8 +120,16 @@ cat >/etc/my_init.d/10-rebuild_pycs.sh <<BIF
 
 /usr/local/bin/rebuild_pycs.py &
 BIF
-
 chmod +x /etc/my_init.d/10-rebuild_pycs.sh
+
+# Disable syslog-ng output to console
+rm -rf /etc/service/syslog-forwarder
+
+# Final cleanup
+apt-get purge -y vim 'language-pack-*' iso-codes python-software-properties software-properties-common rsync cpp gcc gcc-4.8 cpp-4.8
+apt-get autoremove -y --purge
+apt-get clean -y
+
 # Remove extra data...
 rm -rf /usr/local/lib/python2.7/dist-packages/bokeh/server/tests/data
 rm -rf /usr/local/lib/python2.7/dist-packages/matplotlib/tests/baseline_images
