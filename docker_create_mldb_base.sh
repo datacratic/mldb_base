@@ -93,6 +93,7 @@ apt-get install -y \
     libevent-1.4-2 \
     libidn11 \
     python-tk \
+    libarchive13 \
     unzip \
     unrar-free \
     libstdc++6
