@@ -42,6 +42,7 @@ apt-get install -y \
     libblas3gf \
     libevent-1.4-2 \
     libidn11 \
+    libarchive13 \
     unzip \
     unrar-free \
     libstdc++6 \
