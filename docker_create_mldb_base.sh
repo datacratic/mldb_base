@@ -65,14 +65,18 @@ apt-get update
 #####################
 apt-get install -y \
     bash \
-    binutils \
-    git \
-    sudo \
-    tcpdump \
-    python-dev \
     nginx \
     vim-tiny \
-    libboost-all-dev \
+    libboost-serialization1.54.0 \
+    libboost-program-options1.54.0 \
+    libboost-system1.54.0 \
+    libboost-thread1.54.0 \
+    libboost-regex1.54.0 \
+    libboost-locale1.54.0 \
+    libboost-date-time1.54.0 \
+    libboost-iostreams1.54.0 \
+    libboost-python1.54.0 \
+    libboost-filesystem1.54.0 \
     libgoogle-perftools4 \
     liblzma5 \
     libbz2-1.0 \
@@ -102,8 +106,8 @@ apt-get install -y python-pip
 pip install -U pip setuptools || true  # https://github.com/pypa/pip/issues/3045
 pip2 install -U $PIP_WHEELHOUSE -r $BUILD_DOCKER_DIR/python_requirements.txt -c $BUILD_DOCKER_DIR/python_constraints.txt
 
-# Drop all static libs from /usr. not required and big
-find /usr/lib -type f -name '*.a' -print -delete
+# Drop the statically linked Python images
+rm -f /usr/lib/python2.7/config-x86_64-linux-gnu/*.a
 
 # Make sure en_US.UTF-8 is available
 locale-gen en_US.UTF-8
