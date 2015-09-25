@@ -65,14 +65,18 @@ apt-get update
 #####################
 apt-get install -y \
     bash \
-    binutils \
-    git \
-    sudo \
-    tcpdump \
-    python-dev \
     nginx \
     vim-tiny \
-    libboost-all-dev \
+    libboost-serialization1.54.0 \
+    libboost-program-options1.54.0 \
+    libboost-system1.54.0 \
+    libboost-thread1.54.0 \
+    libboost-regex1.54.0 \
+    libboost-locale1.54.0 \
+    libboost-date-time1.54.0 \
+    libboost-iostreams1.54.0 \
+    libboost-python1.54.0 \
+    libboost-filesystem1.54.0 \
     libgoogle-perftools4 \
     liblzma5 \
     libbz2-1.0 \
