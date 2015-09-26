@@ -85,7 +85,6 @@ apt-get install -y \
     libcurlpp0 \
     libcurl3 \
     libssh2-1 \
-    liburcu1 \
     libpython2.7 \
     libgit2-0 \
     libicu52 \
